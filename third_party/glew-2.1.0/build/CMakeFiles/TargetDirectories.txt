@@ -1,0 +1,11 @@
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/install/strip.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/install/local.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/install.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/list_install_components.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/rebuild_cache.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/edit_cache.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/uninstall.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/visualinfo.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/glewinfo.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/glew_s.dir
+/home/brent/apps/cpp/learnopengl/third_party/glew-2.1.0/build/CMakeFiles/glew.dir
