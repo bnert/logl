@@ -11,6 +11,7 @@ add_executable(logl main.cpp)
 
 target_include_directories(logl PRIVATE
   "third_party/"
+  "src/include"
 )
 
 target_link_libraries(logl PRIVATE
