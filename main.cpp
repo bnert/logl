@@ -1,5 +1,5 @@
-#include "glew-2.1.0/include/GL/glew.h"
-#include "glfw/include/GLFW/glfw3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include "src/include/window.h"
 
@@ -61,5 +61,6 @@ int main()
   );
 
   logl::window::inst()->start();
+  logl::window::inst()->clean();
   return 0;
 }

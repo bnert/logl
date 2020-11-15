@@ -1,7 +1,9 @@
 #pragma once
 
-#include "glew-2.1.0/include/GL/glew.h"
-#include "glfw/include/GLFW/glfw3.h"
+#include "pkg/shade/include/shade.h"
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include <atomic>
 #include <functional>
@@ -13,9 +15,7 @@
 namespace logl {
 
 struct WindowEvent {
-  char key_value;
-  int key;
-  int scancode;
+  char key_value; int key; int scancode;
   int action;
   int mods;
 };
@@ -34,9 +34,7 @@ class window {
 public:
   window() : window_(nullptr), resizeable_(false) {}
   window(GLFWwindow* w) : window_(w) {}
-  ~window() {
-    glfwTerminate();
-  }
+  ~window() {}
 
   static window* inst() {
     static window* w = new window();
@@ -50,6 +48,10 @@ public:
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, resizeable_);
     return true;
+  }
+
+  void clean() {
+    glfwTerminate();
   }
 
   bool init(std::function<GLFWwindow*()> cb) {
@@ -104,6 +106,7 @@ public:
         || key == GLFW_KEY_RIGHT_ALT
         || key == GLFW_KEY_LEFT_CONTROL
         || key == GLFW_KEY_RIGHT_CONTROL
+        || action == GLFW_RELEASE
       )
         return;
 
@@ -133,75 +136,87 @@ public:
       logl::window::inst()->handleKeyPress(w, k, s, a, m);
     });
 
-    GLfloat verticies[] = {
-      -0.5f, -0.5f, 0.0f,
-      0.0f, 0.5f, 0.0f,
-      0.5f, -0.5f, 0.0f,
+    shade::Shader vrtx(shade::Type::VRTX, "shaders/basic_vertex.glsl");
+    shade::Shader fgmt(shade::Type::FRAG, "shaders/simple_color.glsl");
+    shade::Program program;
+    program.attach(vrtx);
+    program.attach(fgmt);
+    program.link();
+
+    GLfloat vertices[] = {
+      0.5f, 0.5f, 0.0f, // Top Right
+      0.5f, -0.5f, 0.0f, // Bottom Right
+      -0.5f, -0.5f, 0.0f, // Bottom Left
+      -0.5f, 0.5f, 0.0f // Top Left
     };
 
-    GLuint virtual_buffer_obj_id;
-    glGenBuffers(1, &virtual_buffer_obj_id);
-    glBindBuffer(GL_ARRAY_BUFFER, virtual_buffer_obj_id);
-    glBufferData(
-      GL_ARRAY_BUFFER,
-      sizeof(verticies),
-      verticies,
-      GL_STATIC_DRAW
-    );
+    GLuint indices[] = { // Note that we start from 0!
+      0, 1, 3, // First Triangle
+      1, 2, 3 // Second Triangle
+    };
 
-    GLuint shader_id = glCreateShader(GL_VERTEX_SHADER);
-    std::string sh = "#version 330 core\n"
-    "layout (location = 0) in vec3 position;\n"
-    "void main() {\n"
-    "  gl_Position = vec4(position.x, position.y, position.z, 1.0f);\n"
-    "}\n";
-    const GLchar* shader = sh.data();
-    glShaderSource(shader_id, 1, &shader, nullptr);
-    glCompileShader(shader_id);
-    GLint success;
-    GLchar log[512];
-    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
-    if (!success) {
-      glGetShaderInfoLog(shader_id, 512, NULL, log);
-      std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" <<
-      log << std::endl;
-    }
+    // For a triangle
+    // GLfloat verticies[] = {
+    //   -0.5f, -0.5f, 0.0f,
+    //   0.0f, 0.5f, 0.0f,
+    //   0.5f, -0.5f, 0.0f,
+    // };
 
-    GLuint fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
-    std::string fg = "#version 330 core\n"
-    "out vec4 color;\n"
-    "void main() {\n"
-    "  color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n";
-    const GLchar* fg_shader = fg.data();
-    glShaderSource(fragment_id, 1, &fg_shader, nullptr);
-    glCompileShader(fragment_id);
-    glGetShaderiv(fragment_id, GL_COMPILE_STATUS, &success);
-    if (!success) {
-      glGetShaderInfoLog(fragment_id, 512, NULL, log);
-      std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" <<
-      log << std::endl;
-    }
+    GLuint el_buf_obj_id;
+    GLuint vertex_buffer_obj_id, vertex_array_obj_id;
 
-    GLuint program = glCreateProgram();
-    glAttachShader(program, shader_id);
-    glAttachShader(program, fragment_id);
-    glLinkProgram(program);
+    glGenVertexArrays(1, &vertex_array_obj_id);
+    glGenBuffers(1, &vertex_buffer_obj_id);
+    glGenBuffers(1, &el_buf_obj_id);
 
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-      glGetProgramInfoLog(program, 512, nullptr, log);
-      std::cout << "PROGRAM LINK ERR: " << log << std::endl;
-    } else {
-      glUseProgram(program);
-    }
+    // Bind vertex array object first
+    glBindVertexArray(vertex_array_obj_id);
+
+    // Bind the verticies buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_obj_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Bind the indicies buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, el_buf_obj_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // For triangles
+    // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_obj_id);
+    // glBufferData(
+    //   GL_ARRAY_BUFFER,
+    //   sizeof(verticies),
+    //   verticies,
+    //   GL_STATIC_DRAW
+    // );
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+
+    // Unbinds the GL_ARRAY_BUFFER
+    // and unbinds the vertex array
+    // from the current gl context
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+ 
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Game loop
     while (!glfwWindowShouldClose(logl::window::inst()->mutableWindow())) {
-      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
       // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
       glfwPollEvents();
+
+      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      // sets shader to use
+      glUseProgram(program.id());
+      // binds the vao, which is bound to the vbo for creating a triangle
+      glBindVertexArray(vertex_array_obj_id);
+      // draws currently bound vbo via the vao
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+      // glDrawArrays(GL_TRIANGLES, 0, 3);
+      // unbinds the vao
+      glBindVertexArray(0);
+
       // Swap the screen buffers
       glfwSwapBuffers(logl::window::inst()->mutableWindow());
     }
